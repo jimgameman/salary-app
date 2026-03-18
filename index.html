@@ -172,6 +172,7 @@
         <button class="save-btn" id="saveBtn" onclick="saveHistory()">บันทึกเดือนนี้</button>
         <button class="copy-btn" id="copyBtn" onclick="copySummary()">Copy สรุป</button>
       </div>
+      <button class="default-btn" id="defaultBtn" onclick="saveDefault()">&#128204; บันทึกเป็น default</button>
     </div>
 
     <div id="page-history" class="page">
@@ -186,16 +187,32 @@
 <script>
 const BC=['#3266ad','#1d9e75','#ba7517','#d4537e','#534ab7','#d85a30','#639922'];
 const IC=['#888780','#b4b2a9','#5f5e5a','#444441'];
-let extras=[], buckets=[
-  {id:1,name:'ค่าใช้จ่าย',type:'%',val:40},
-  {id:2,name:'ออม/ลงทุน',type:'%',val:20},
-  {id:3,name:'ท่องเที่ยว',type:'%',val:10},
-];
-let insts=[
-  {id:1,name:'ผ่อนโทรศัพท์',monthly:1500,remaining:12,total:24,dueDay:5},
-  {id:2,name:'บัตรเครดิต KBank',monthly:3500,remaining:0,total:0,dueDay:15},
-];
-let neid=1,nbid=4,niid=3;
+const DEFAULT_STATE = {
+  salary: 30000,
+  extras: [],
+  buckets: [
+    {id:1,name:'ค่าใช้จ่าย',type:'%',val:40},
+    {id:2,name:'ออม/ลงทุน',type:'%',val:20},
+    {id:3,name:'ท่องเที่ยว',type:'%',val:10},
+  ],
+  insts: []
+};
+
+let state;
+try {
+  const saved = localStorage.getItem('sal_app_state');
+  state = saved ? JSON.parse(saved) : JSON.parse(JSON.stringify(DEFAULT_STATE));
+} catch(e) {
+  state = JSON.parse(JSON.stringify(DEFAULT_STATE));
+}
+
+let extras = state.extras || [];
+let buckets = state.buckets || DEFAULT_STATE.buckets;
+let insts = state.insts || [];
+let neid = Math.max(1, ...extras.map(e=>e.id||0)) + 1;
+let nbid = Math.max(1, ...buckets.map(b=>b.id||0)) + 1;
+let niid = Math.max(1, ...insts.map(i=>i.id||0)) + 1;
+
 let history=[];
 try{history=JSON.parse(localStorage.getItem('sal_app')||'[]')}catch(e){}
 let pieChart=null;
@@ -204,6 +221,15 @@ const calcB=(b,s)=>b.type==='%'?s*b.val/100:b.val;
 const iSum=()=>insts.reduce((a,i)=>a+i.monthly,0);
 const totalIncome=()=>(parseFloat(document.getElementById('salary').value)||0)+extras.reduce((a,e)=>a+e.val,0);
 const today=new Date().getDate();
+
+function autosave(){
+  try{
+    localStorage.setItem('sal_app_state', JSON.stringify({
+      salary: parseFloat(document.getElementById('salary').value)||0,
+      extras, buckets, insts
+    }));
+  }catch(e){}
+}
 
 function render(){
   const total=totalIncome();
@@ -295,6 +321,18 @@ function copySummary(){
   navigator.clipboard.writeText(t).then(()=>{const btn=document.getElementById('copyBtn');btn.textContent='คัดลอกแล้ว ✓';setTimeout(()=>btn.textContent='Copy สรุป',1800);}).catch(()=>alert(t));
 }
 
+function saveDefault(){
+  try{
+    localStorage.setItem('sal_app_state', JSON.stringify({
+      salary: parseFloat(document.getElementById('salary').value)||0,
+      extras, buckets, insts
+    }));
+  }catch(e){}
+  const btn=document.getElementById('defaultBtn');
+  btn.textContent='📌 บันทึกแล้ว ✓';
+  setTimeout(()=>btn.textContent='📌 บันทึกเป็น default',1800);
+}
+
 function saveHistory(){
   const now=new Date();
   history.unshift({date:`${now.getFullYear()}/${String(now.getMonth()+1).padStart(2,'0')}`,salary:parseFloat(document.getElementById('salary').value)||0,extras:JSON.parse(JSON.stringify(extras)),buckets:JSON.parse(JSON.stringify(buckets)),insts:JSON.parse(JSON.stringify(insts))});
@@ -327,6 +365,7 @@ function switchTab(t){
 }
 
 if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));}
+document.getElementById('salary').value = state.salary || 30000;
 render();
 </script>
 </body>
