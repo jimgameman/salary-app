@@ -144,7 +144,7 @@
       <div class="income-card">
         <div class="income-main">
           <span class="income-label">เงินเดือน</span>
-          <input class="income-input" id="salary" type="number" value="30000" oninput="render()"/>
+          <input class="income-input" id="salary" type="number" value="30000" onblur="render()"/>
           <span class="income-unit">฿</span>
         </div>
         <div class="extra-list" id="extraList"></div>
@@ -241,7 +241,7 @@ function renderExtras(){
   const el=document.getElementById('extraList');el.innerHTML='';
   extras.forEach((e,i)=>{
     const row=document.createElement('div');row.className='extra-row';
-    row.innerHTML=`<input class="extra-name" value="${e.name}" placeholder="ชื่อรายได้" onchange="extras[${i}].name=this.value"/><input class="extra-val" type="number" value="${e.val}" oninput="extras[${i}].val=parseFloat(this.value)||0;render()"/><button class="del" onclick="extras.splice(${i},1);render()">×</button>`;
+    row.innerHTML=`<input class="extra-name" value="${e.name}" placeholder="ชื่อรายได้" onchange="extras[${i}].name=this.value"/><input class="extra-val" type="number" value="${e.val}" onblur="extras[${i}].val=parseFloat(this.value)||0;render()"/><button class="del" onclick="extras.splice(${i},1);render()">×</button>`;
     el.appendChild(row);
   });
 }
@@ -254,7 +254,7 @@ function renderBuckets(total){
   const el=document.getElementById('buckets');el.innerHTML='';let t=0;
   buckets.forEach((b,i)=>{t+=calcB(b,total);
     const d=document.createElement('div');d.className='bucket-row';
-    d.innerHTML=`<div class="bucket-dot" style="background:${BC[i%BC.length]}"></div><input class="bname" value="${b.name}" onchange="buckets[${i}].name=this.value"/><div class="toggle"><button class="tbtn ${b.type==='%'?'active':''}" onclick="buckets[${i}].type='%';render()">%</button><button class="tbtn ${b.type==='฿'?'active':''}" onclick="buckets[${i}].type='฿';render()">฿</button></div><input class="bval" type="number" step="any" value="${b.val}" oninput="buckets[${i}].val=parseFloat(this.value)||0;render()"/><button class="del" onclick="buckets.splice(${i},1);render()">×</button>`;
+    d.innerHTML=`<div class="bucket-dot" style="background:${BC[i%BC.length]}"></div><input class="bname" value="${b.name}" onchange="buckets[${i}].name=this.value"/><div class="toggle"><button class="tbtn ${b.type==='%'?'active':''}" onclick="buckets[${i}].type='%';render()">%</button><button class="tbtn ${b.type==='฿'?'active':''}" onclick="buckets[${i}].type='฿';render()">฿</button></div><input class="bval" type="number" step="any" value="${b.val}" onblur="buckets[${i}].val=parseFloat(this.value)||0;render()"/><button class="del" onclick="buckets.splice(${i},1);render()">×</button>`;
     el.appendChild(d);
   });
   document.getElementById('bTotal').textContent='รวม '+fmt(t)+' ฿';
@@ -269,7 +269,7 @@ function renderInsts(){
     const pct=inst.total>0?Math.round(done/inst.total*100):0;
     const dueSoon=inst.dueDay>0&&inst.dueDay>=today&&inst.dueDay-today<=3;
     const d=document.createElement('div');d.className='inst-card'+(dueSoon?' due-soon':'');
-    d.innerHTML=`<div class="inst-main"><div class="inst-icon" style="background:${IC[i%IC.length]}"></div><input class="inst-name-input" value="${inst.name}" onchange="insts[${i}].name=this.value"/><span class="inst-amt-display">${fmt(inst.monthly)} ฿</span><button class="del" onclick="insts.splice(${i},1);render()">×</button></div><div class="inst-meta"><div class="meta-cell"><span class="meta-lbl">฿/เดือน</span><input class="meta-inp" type="number" value="${inst.monthly}" oninput="insts[${i}].monthly=parseFloat(this.value)||0;render()"/></div><div class="meta-cell"><span class="meta-lbl">งวดที่เหลือ</span><input class="meta-inp" type="number" value="${inst.remaining||''}" placeholder="–" oninput="insts[${i}].remaining=parseInt(this.value)||0;render()"/></div><div class="meta-cell"><span class="meta-lbl">ครบวันที่</span><input class="meta-inp" type="number" min="1" max="31" value="${inst.dueDay||''}" placeholder="–" oninput="insts[${i}].dueDay=parseInt(this.value)||0;render()"/></div></div>${hasProg?`<div class="inst-prog"><div class="prog-row"><span>ผ่อนแล้ว ${done}/${inst.total} งวด${dueSoon?' <span class="due-badge">ใกล้ครบกำหนด</span>':''}</span><span>${pct}%</span></div><div class="prog-track"><div class="prog-fill" style="width:${pct}%;background:${IC[i%IC.length]}"></div></div></div>`:''}`;
+    d.innerHTML=`<div class="inst-main"><div class="inst-icon" style="background:${IC[i%IC.length]}"></div><input class="inst-name-input" value="${inst.name}" onchange="insts[${i}].name=this.value"/><span class="inst-amt-display">${fmt(inst.monthly)} ฿</span><button class="del" onclick="insts.splice(${i},1);render()">×</button></div><div class="inst-meta"><div class="meta-cell"><span class="meta-lbl">฿/เดือน</span><input class="meta-inp" type="number" value="${inst.monthly}" onblur="insts[${i}].monthly=parseFloat(this.value)||0;render()"/></div><div class="meta-cell"><span class="meta-lbl">งวดที่เหลือ</span><input class="meta-inp" type="number" value="${inst.remaining||''}" placeholder="–" onblur="insts[${i}].remaining=parseInt(this.value)||0;render()"/></div><div class="meta-cell"><span class="meta-lbl">ครบวันที่</span><input class="meta-inp" type="number" min="1" max="31" value="${inst.dueDay||''}" placeholder="–" onblur="insts[${i}].dueDay=parseInt(this.value)||0;render()"/></div></div>${hasProg?`<div class="inst-prog"><div class="prog-row"><span>ผ่อนแล้ว ${done}/${inst.total} งวด${dueSoon?' <span class="due-badge">ใกล้ครบกำหนด</span>':''}</span><span>${pct}%</span></div><div class="prog-track"><div class="prog-fill" style="width:${pct}%;background:${IC[i%IC.length]}"></div></div></div>`:''}`;
     el.appendChild(d);
   });
   document.getElementById('iTotal').textContent='รวม '+fmt(t)+' ฿';
