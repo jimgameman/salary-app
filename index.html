@@ -125,6 +125,11 @@
   .history-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; background: var(--bg2); border-radius: var(--radius-sm); font-size: 13px; cursor: pointer; border: 0.5px solid transparent; margin-bottom: 6px; }
   .history-item:active { background: var(--bg3); }
 
+  .sync-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+  .sync-btn { padding: 10px; background: transparent; color: var(--text); border: 0.5px solid var(--border2); border-radius: var(--radius-sm); font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; }
+  .sync-btn:hover { background: var(--bg2); }
+  .sync-btn.uploading { opacity: .6; pointer-events: none; }
+  .sync-status { font-size: 12px; color: var(--text3); text-align: center; min-height: 18px; margin-bottom: 8px; }
   input[type=number]::-webkit-inner-spin-button,
   input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
 </style>
@@ -168,6 +173,11 @@
       <div class="sec-head"><span class="sec-label">สรุป</span></div>
       <div id="results"></div>
       <div class="chart-wrap"><canvas id="pie"></canvas></div>
+      <div class="sync-row">
+        <button class="sync-btn" id="uploadBtn" onclick="syncUpload()">&#9650; บันทึกขึ้น Cloud</button>
+        <button class="sync-btn" id="downloadBtn" onclick="syncDownload()">&#9660; โหลดจาก Cloud</button>
+      </div>
+      <p class="sync-status" id="syncStatus"></p>
       <div class="btn-row">
         <button class="save-btn" id="saveBtn" onclick="saveHistory()">บันทึกเดือนนี้</button>
         <button class="copy-btn" id="copyBtn" onclick="copySummary()">Copy สรุป</button>
@@ -333,6 +343,71 @@ function saveDefault(){
   const btn=document.getElementById('defaultBtn');
   btn.textContent='📌 บันทึกแล้ว ✓';
   setTimeout(()=>btn.textContent='📌 บันทึกเป็น default',1800);
+}
+
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx0eNzGH3dqdicpPsDF9AJq5fn65ibA_k4wolK_rQU6Uack7J7lmelcymeyvmS21Xc/exec';
+
+function getAppState(){
+  return {
+    salary: parseFloat(document.getElementById('salary').value)||0,
+    extras, buckets, insts, history
+  };
+}
+
+function setStatus(msg, ok=true){
+  const el = document.getElementById('syncStatus');
+  el.textContent = msg;
+  el.style.color = ok ? 'var(--green)' : 'var(--red)';
+  if(msg) setTimeout(()=>el.textContent='', 3000);
+}
+
+async function syncUpload(){
+  const btn = document.getElementById('uploadBtn');
+  btn.classList.add('uploading');
+  btn.textContent = '⏳ กำลังบันทึก...';
+  try{
+    const res = await fetch(SCRIPT_URL, {
+      method: 'POST',
+      body: JSON.stringify(getAppState()),
+    });
+    const data = await res.json();
+    if(data.ok){ setStatus('✓ บันทึกขึ้น Cloud แล้ว'); }
+    else{ setStatus('เกิดข้อผิดพลาด ลองใหม่อีกครั้ง', false); }
+  } catch(e){
+    setStatus('เชื่อมต่อไม่ได้ ตรวจสอบเน็ต', false);
+  } finally{
+    btn.classList.remove('uploading');
+    btn.innerHTML = '&#9650; บันทึกขึ้น Cloud';
+  }
+}
+
+async function syncDownload(){
+  const btn = document.getElementById('downloadBtn');
+  btn.classList.add('uploading');
+  btn.textContent = '⏳ กำลังโหลด...';
+  try{
+    const res = await fetch(SCRIPT_URL + '?t=' + Date.now());
+    const data = await res.json();
+    if(data.salary !== undefined){
+      extras = data.extras || [];
+      buckets = data.buckets || [];
+      insts = data.insts || [];
+      history = data.history || [];
+      document.getElementById('salary').value = data.salary || 0;
+      nbid = Math.max(1, ...buckets.map(b=>b.id||0)) + 1;
+      niid = Math.max(1, ...insts.map(i=>i.id||0)) + 1;
+      neid = Math.max(1, ...extras.map(e=>e.id||0)) + 1;
+      render();
+      setStatus('✓ โหลดข้อมูลจาก Cloud แล้ว');
+    } else {
+      setStatus('ยังไม่มีข้อมูลบน Cloud', false);
+    }
+  } catch(e){
+    setStatus('เชื่อมต่อไม่ได้ ตรวจสอบเน็ต', false);
+  } finally{
+    btn.classList.remove('uploading');
+    btn.innerHTML = '&#9660; โหลดจาก Cloud';
+  }
 }
 
 function saveHistory(){
